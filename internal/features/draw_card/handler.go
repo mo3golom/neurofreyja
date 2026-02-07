@@ -3,6 +3,7 @@ package draw_card
 import (
 	"context"
 	"fmt"
+	"html"
 
 	"neurofreyja/internal/shared/telegram"
 
@@ -53,7 +54,9 @@ func (h *Handler) Handle(c telebot.Context) error {
 		return nil
 	}
 
-	caption := fmt.Sprintf("Карта \"<b>%s</b>\"\n\n%s", cardItem.Title, description)
+	escapedTitle := html.EscapeString(cardItem.Title)
+	escapedDescription := html.EscapeString(description)
+	caption := fmt.Sprintf("Карта \"<b>%s</b>\"\n\n%s", escapedTitle, escapedDescription)
 	opts := &telebot.SendOptions{ParseMode: telebot.ModeHTML}
 	_, err = h.Messenger.SendPhoto(ctx, msg.Chat, image, caption, opts)
 	if err != nil {

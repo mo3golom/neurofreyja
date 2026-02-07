@@ -2,6 +2,7 @@ package find_card_scan
 
 import (
 	"context"
+	"fmt"
 
 	"neurofreyja/internal/shared/telegram"
 	ftime "neurofreyja/internal/shared/time"
@@ -76,7 +77,8 @@ func (h *Handler) Handle(c telebot.Context) error {
 			continue
 		}
 
-		_, err = h.Messenger.SendTextWithDelete(ctx, msg.Chat, "У вас есть 10 минут чтобы скачать изображения", deleteAt)
+		warning := fmt.Sprintf("У вас есть %d минут чтобы скачать изображения", h.DeleteAfterMinutes)
+		_, err = h.Messenger.SendTextWithDelete(ctx, msg.Chat, warning, deleteAt)
 		if err != nil {
 			if h.Logger != nil {
 				h.Logger.WithError(err).Warn("failed to send delete warning")

@@ -10,8 +10,7 @@ func BotMentioned(text, username string) bool {
 	if username == "" {
 		return false
 	}
-	pattern := `(?i)@` + regexp.QuoteMeta(username)
-	re := regexp.MustCompile(pattern)
+	re := mentionRegex(username)
 	return re.MatchString(text)
 }
 
@@ -20,7 +19,12 @@ func RemoveBotMention(text, username string) string {
 	if username == "" {
 		return strings.TrimSpace(text)
 	}
-	pattern := `(?i)@` + regexp.QuoteMeta(username)
-	re := regexp.MustCompile(pattern)
-	return strings.TrimSpace(re.ReplaceAllString(text, ""))
+	re := mentionRegex(username)
+	cleaned := re.ReplaceAllString(text, "$1")
+	return strings.TrimSpace(cleaned)
+}
+
+func mentionRegex(username string) *regexp.Regexp {
+	pattern := `(?i)(^|[^\w])@` + regexp.QuoteMeta(username) + `(\b|$)`
+	return regexp.MustCompile(pattern)
 }
