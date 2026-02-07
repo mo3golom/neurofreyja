@@ -1,0 +1,11 @@
+/docker/
+/bruno/
+/.env
+.DS_Store
+
+
+.idea
+.vscode
+/functions
+.env
+.kiro

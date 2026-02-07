@@ -1,0 +1,1799 @@
+{
+  "name": "freyja_ai",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -688,
+        32
+      ],
+      "id": "98902cc7-f305-403c-8bd3-cc477c7354e1",
+      "name": "Telegram Trigger",
+      "webhookId": "f184cf11-9623-4a7c-894f-e5e19422262b",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        64
+      ],
+      "id": "cce91ac6-f7d9-412f-a1df-6e460ad8d480",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fRUNnoXadinHAWba",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n \"titles\":[\n    \"title_1\",\n    \"title_2\",\n    \"title_n\"\n ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        64
+      ],
+      "id": "ded13e69-01ee-4637-8486-55d39e919163",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2288,
+        -128
+      ],
+      "id": "08c37a05-8a41-4e71-859d-94cb7d7f7c3e",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "bucketName": "neurofreyja",
+        "fileKey": "={{ $json.image_id }}",
+        "binaryPropertyName": "image_data"
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        32
+      ],
+      "id": "7a4e2a9b-4a0c-43dd-a2e7-71f5c89a12b8",
+      "name": "S3",
+      "credentials": {
+        "s3": {
+          "id": "9Wdm9RSk9YyrxTIG",
+          "name": "supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "/find_card_scan",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3c68cf97-5287-45d8-bf58-34188cd913a1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/find_card_scan"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "80831a2d-1776-44f3-999a-08aedab5af69",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "/draw_card",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/draw_card"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        368,
+        0
+      ],
+      "id": "719fd0d6-6a81-4543-b7a9-042a692f872e",
+      "name": "Commands router"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Эту команду надо вызывать реплаем на сообщение",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        240
+      ],
+      "id": "f80997c0-bc41-49fb-8092-a2b0e8e3a7d8",
+      "name": "сообщение: \"надо реплаем\"",
+      "webhookId": "c470d323-77a5-45d9-a270-7e2494ac734c",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "=image_data",
+        "additionalFields": {
+          "caption": "=Это карта - \"{{ $json.title }}\""
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3184,
+        -144
+      ],
+      "id": "2f1766c0-419c-4254-8469-2e0ed46b9d70",
+      "name": "Отправка найденных фото",
+      "webhookId": "4d9d20db-5355-4247-b255-1830ae506915",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select title, image_id from neuro_freyja_card\nwhere title = any(array{{ $json.output.titles.map(item => item.toLowerCase()).toJsonString().replaceAll('\"','\\'') }}::text[])",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2064,
+        -128
+      ],
+      "id": "ffe985a6-3f4d-4158-8b72-5a2afa70d1cd",
+      "name": "Получить карты из БД",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let object = $('Telegram Trigger').first().json.message.reply_to_message\n\nif (object.hasOwnProperty('caption')) {\n  return {\n    \"message_text\": object.caption\n  }\n}\n\nreturn  {\n    \"message_text\": object.text\n  }"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -128
+      ],
+      "id": "ce8137b5-e3c8-47f2-96f5-0af199f29005",
+      "name": "Получить текст сообщения"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19268316-d9b8-49b5-9a2e-fa88521b0b08",
+              "leftValue": "={{ $('Telegram Trigger').item.json.message.reply_to_message.message_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        -128
+      ],
+      "id": "a9e4a050-0e85-4c65-b966-2458ba9d39fb",
+      "name": "Если команда поддерживается"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function unixTimestampToTimestamptz(unixTimestamp) {\n  // Convert Unix timestamp (seconds) to milliseconds\n  const milliseconds = unixTimestamp * 1000;\n\n  // Create a JavaScript Date object\n  const date = new Date(milliseconds);\n\n  // Format the date as an ISO string, which includes timezone information\n  const timestamptzString = date.toISOString();\n\n  return timestamptzString;\n}\n\nlet object = $json.result\n\nlet text = ''\nif (object.hasOwnProperty('caption')) {\n   text = object.caption\n} \nif (object.hasOwnProperty('text')) {\n   text = object.text\n} \n\nreturn  {\n    \"message_id\": object.message_id,\n    \"chat_id\": object?.chat?.id,\n    \"chat_title\": object?.chat?.title,\n    \"chat_type\": object?.chat?.type,\n    \"date\":  unixTimestampToTimestamptz(object.date),\n    \"message_text\": text,\n    \"delete_at\": $json?.delete_at\n  }"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4784,
+        768
+      ],
+      "id": "061f1cca-4572-4215-a458-ed09cac880d2",
+      "name": "Получить текст сообщения для сохранения истории"
+    },
+    {
+      "parameters": {
+        "tableId": "neuro_freyja_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message_id",
+              "fieldValue": "={{ $json.message_id }}"
+            },
+            {
+              "fieldId": "chat_id",
+              "fieldValue": "={{ $json.chat_id }}"
+            },
+            {
+              "fieldId": "chat_title",
+              "fieldValue": "={{ $json.chat_title }}"
+            },
+            {
+              "fieldId": "chat_type",
+              "fieldValue": "={{ $json.chat_type }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $json.date }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.message_text }}"
+            },
+            {
+              "fieldId": "delete_at",
+              "fieldValue": "={{ $json?.delete_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4944,
+        768
+      ],
+      "id": "1ac1f731-c76c-49ef-bcaa-7adc86052677",
+      "name": "Сохранить истории сообщений",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Hn3icMJPHERC8cEf",
+          "name": "pugcloud supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "У вас есть 10 минут чтобы скачать изображения",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3440,
+        -208
+      ],
+      "id": "fcc7f611-06f0-4535-8fec-eb5b34507919",
+      "name": "Предупреждение об удалении",
+      "webhookId": "da073078-b410-4084-a150-3fbfeefccb11",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "071599ce-7d57-4fa1-acce-f5efbca8a644",
+              "name": "delete_at",
+              "value": "={{ $now.plus(10, 'minutes') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3664,
+        80
+      ],
+      "id": "f84b4481-4a02-45a5-bfe9-4f61b9f80698",
+      "name": "Добавить время удаления сообщения (10 минут)"
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "messageId": "={{ $('Отправить сообщение о загрузке').item.json.result.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3440,
+        -448
+      ],
+      "id": "44f7f44f-b893-4a94-8ebd-636733bb0ad9",
+      "name": "Удалить сообщение о загрузке",
+      "webhookId": "bab79395-cf2c-4f2b-8aec-e2e33a54f059",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Сейчас поищу...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        -128
+      ],
+      "id": "937f6e63-3bfb-478a-9715-7f087751e20c",
+      "name": "Отправить сообщение о загрузке",
+      "webhookId": "076e2c96-7c57-45fb-a5ca-9b75085cc273",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\nreturn {\n  \"ids\": $('Получение записей на удаление').all().map(item => item.json.id),\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -400
+      ],
+      "id": "457c47c3-3233-4eb6-b5d9-a073c60e3e3f",
+      "name": "Вытаскиваем ID записей, которые надо обновить"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select id, message_id, chat_id \n  from neuro_freyja_history \n  where delete_at is not null \n    and delete_at <= now()\n    and deleted_at is null",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -528,
+        -400
+      ],
+      "id": "91657308-fc9a-4501-b990-5588e9aa45b0",
+      "name": "Получение записей на удаление",
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "messageId": "={{ $json.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -400
+      ],
+      "id": "d773625a-bb70-488c-9084-cbe6f5abde16",
+      "name": "Удаление сообщений",
+      "webhookId": "3fd4f747-7de0-41c3-b74c-f8d28ad8d9ec",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "update neuro_freyja_history set deleted_at = now() where id = any(array{{ $json.ids.toJsonString().replaceAll('\"','\\'') }}::bigint[])",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        -400
+      ],
+      "id": "fe217e54-a878-4460-895a-5c40a815dcb9",
+      "name": "Пометка записей как удаленных",
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -400
+      ],
+      "id": "a04b3c1c-593e-4b4e-9fa3-44c381af3634",
+      "name": "Раз в 1 минуту"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "09c36f2f-b493-4970-b3ac-23fcfdc67227",
+              "leftValue": "={{ $input.item.json.hasField(\"image_id\") }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2672,
+        -64
+      ],
+      "id": "60d2301f-9daa-4a9d-8a25-644515730a64",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b00bec1-bfc0-4582-a261-cb9a4c1f888d",
+              "leftValue": "={{  $input.first().json.hasField(\"image_id\") }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        -144
+      ],
+      "id": "8e7f08df-6e30-4782-ac1b-f0235884b189",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text = $json.message.text.replace(\"@neuro_freyja_bot\", \"\")\n\nreturn {\n  \"text\": text\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        0
+      ],
+      "id": "9aa59862-7716-4682-a5b8-764ab01dc59c",
+      "name": "Удалить упоминание"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Такая команда мне неизвестна",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        1280
+      ],
+      "id": "2e8830c7-fea6-4577-82c9-6834fb170048",
+      "name": "сообщение: \"неизвестная команда\"",
+      "webhookId": "c470d323-77a5-45d9-a270-7e2494ac734c",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e4709167-91c5-4255-88a5-5233da1c135d",
+              "leftValue": "={{ $json.message_text }}",
+              "rightValue": "neuro_freyja_bot",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        -80
+      ],
+      "id": "11d3941f-6ebc-4fdd-8fef-e48c661ced8e",
+      "name": "Если упомянули бота"
+    },
+    {
+      "parameters": {
+        "content": "## Удаление сообщений, которые нужно удалить",
+        "height": 320,
+        "width": 1040,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -768,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "57b73281-b888-40b9-9eba-39270b81db5f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Запись истории сообщений бота",
+        "height": 300,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4720,
+        672
+      ],
+      "typeVersion": 1,
+      "id": "38dd70ea-6939-4519-8591-eac488c7420c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Команда поиска карт",
+        "height": 920,
+        "width": 3060,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        832,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "400fb1a1-b8d5-4750-8477-c69473193582",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Слушатель сообщений",
+        "height": 340,
+        "width": 1020
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -736,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "5e00ce98-e867-411f-b4da-bdb362b99ad2",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const message = $json.message\nlet text = ''\n\nif (message.hasOwnProperty('text')) {\n  text = message.text\n}\nif (message.hasOwnProperty('caption')) {\n  text = message.caption\n}\n\n$json.message_text = text\n\nreturn $json"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        32
+      ],
+      "id": "ade4aa5b-a28f-46b0-bc4c-115121ba66d7",
+      "name": "Получение данных сообщения"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.chat.type }}",
+                    "rightValue": "group",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "309c1ae2-4b47-4fae-ba6c-7309d4050727"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "group"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f90ab8a1-fb7d-42c3-9726-6ec2aca06f96",
+                    "leftValue": "={{ $json.message.chat.type }}",
+                    "rightValue": "supergroup",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "supergroup"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "deca7e45-d505-4261-b155-5209bc17869b",
+                    "leftValue": "={{ $json.message.chat.type }}",
+                    "rightValue": "private",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "private"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -336,
+        32
+      ],
+      "id": "bdc4b9da-7345-45e5-9302-8a06359ff8f6",
+      "name": "Тип канала"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select \n  c.id, \n  c.title,\n  c.image_id,\n  c.description\nfrom neuro_freyja_card as c \nwhere c.id not in (\n  select card_id \n  from neuro_freyja_drawn_card \n  where chat_id = {{ $('Telegram Trigger').item.json.message.chat.id }}\n)\norder by RANDOM()\nlimit 1\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1120,
+        688
+      ],
+      "id": "19545514-e3e8-4e69-a99d-b45370d95ccd",
+      "name": "Вытягивание случайной карты",
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "80c551a5-cba2-448e-929d-3dfbd719cf87",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        688
+      ],
+      "id": "5c5714c0-4973-4386-9b53-33f61dc318d6",
+      "name": "Проверка пустого описания"
+    },
+    {
+      "parameters": {
+        "content": "## Команда вытаскивания случайной карты",
+        "height": 680,
+        "width": 2760
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        832,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "fdef1583-9042-4af7-8dd8-f4e8a37cf7f8",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "neuro_freyja_card",
+          "mode": "list",
+          "cachedResultName": "neuro_freyja_card"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Вытягивание случайной карты').item.json.id }}",
+            "description": "={{ $json.output }}",
+            "updated_at": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "image_id",
+              "displayName": "image_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2048,
+        608
+      ],
+      "id": "8da499df-7f30-4aa0-b8f4-228296f4182d",
+      "name": "Обновление описания",
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "=image_data",
+        "additionalFields": {
+          "caption": "=Карта \"<b>{{ $('Вытягивание случайной карты').item.json.title }}</b>\"\n\n{{ $('Определение описания карты').item.json.description }}",
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2880,
+        784
+      ],
+      "id": "eaf07670-9df4-4100-9f87-785cb5e843a9",
+      "name": "Отправка вытянутой карты",
+      "webhookId": "4d9d20db-5355-4247-b255-1830ae506915",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=напиши короткое шуточное описание на спринт (3-4 предложения) — карта таро \"{{ $('Вытягивание случайной карты').item.json.title }}\"\n\nОБЯЗАТЕЛЬНЫЕ УСЛОВИЯ:\n1. В ответе напиши только одно шуточное описание\n2. НЕ начинай описание с \"Карта Таро \"НАЗВАНИЕ\" - ...\". Пиши шуточным языком\n3. Описание ДОЛЖНО быть для спринта в agile-командах, которые работают по скраму",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1648,
+        608
+      ],
+      "id": "3d4bc277-9c46-445d-9d67-b5433783e8d5",
+      "name": "Генерация описания"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты - специалист, который отлично умеет вытаскивать названия карт таро из описания.\n\nУ меня есть следующее описание: \"{{ $json.message_text }}\"\n\nКак называются карты (их может несколько)?\n\nВАЖНО! ВЫВОДИ ОТВЕТ ТОЛЬКО В СЛЕДУЮЩЕМ ФОРМАТЕ:\n{\n \"titles\":[\n    \"title_1\",\n    \"title_2\",\n    ...,\n    \"title_n\"\n ]\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1760,
+        -128
+      ],
+      "id": "2e69baba-426c-43e8-9f6a-c2888b65dfc0",
+      "name": "Определение названия карты"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9cff34ec-01e0-49f0-a61e-983e7552e61c",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2272,
+        608
+      ],
+      "id": "f0f91fee-d1a9-4d26-970d-a1e58c40423d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "bucketName": "neurofreyja",
+        "fileKey": "={{ $('Вытягивание случайной карты').item.json.image_id }}",
+        "binaryPropertyName": "image_data"
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        784
+      ],
+      "id": "85a8ab8e-60eb-47fd-bd87-34716562537a",
+      "name": "Скачиваем изображение для отправки",
+      "credentials": {
+        "s3": {
+          "id": "9Wdm9RSk9YyrxTIG",
+          "name": "supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($('Вытягивание случайной карты').item.json.description !== null) {\n  return {\n    \"description\": $('Вытягивание случайной карты').item.json.description\n  }\n}\n\nreturn {\n    \"description\": $('Генерация описания').item.json.output\n  }"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        784
+      ],
+      "id": "d57d535b-5e90-4911-93c3-71acbdbe6a3e",
+      "name": "Определение описания карты"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "neuro_freyja_drawn_card",
+          "mode": "list",
+          "cachedResultName": "neuro_freyja_drawn_card"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "card_id": "={{ $('Вытягивание случайной карты').item.json.id }}",
+            "chat_id": "={{ $json.result.chat.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "card_id",
+              "displayName": "card_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3088,
+        864
+      ],
+      "id": "708fa575-b9af-4076-aaac-8673332c6144",
+      "name": "Запись какая карта была вытянута",
+      "credentials": {
+        "postgres": {
+          "id": "vpJ5fkTzVIENfLij",
+          "name": "pugcloud supabase postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Вытягиваю карту...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        688
+      ],
+      "id": "281120a9-f283-43b7-9190-18740fa977b0",
+      "name": "Сообщение загрузки",
+      "webhookId": "1bc7bf7c-4109-4767-abec-ae9183e150f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "messageId": "={{ $('Сообщение загрузки').item.json.result.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3088,
+        672
+      ],
+      "id": "4b8ac1ca-74b5-4037-b6be-9abe2ca08ffe",
+      "name": "Удалить сообщение о загрузке1",
+      "webhookId": "492979bd-26c9-4eaa-a484-024828863bc3",
+      "credentials": {
+        "telegramApi": {
+          "id": "wjd27PPFWJIjsSYd",
+          "name": "neuro_freyja"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        800
+      ],
+      "id": "7a289105-3e2d-4974-af39-d8ac6f8497fe",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "xBBxZNLkocuXQAz7",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Получение данных сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Определение названия карты",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Определение названия карты",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Удалить сообщение о загрузке",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commands router": {
+      "main": [
+        [
+          {
+            "node": "Если команда поддерживается",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сообщение загрузки",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "сообщение: \"неизвестная команда\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить карты из БД": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить текст сообщения": {
+      "main": [
+        [
+          {
+            "node": "Определение названия карты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Если команда поддерживается": {
+      "main": [
+        [
+          {
+            "node": "Отправить сообщение о загрузке",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "сообщение: \"надо реплаем\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправка найденных фото": {
+      "main": [
+        [
+          {
+            "node": "Предупреждение об удалении",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Добавить время удаления сообщения (10 минут)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить текст сообщения для сохранения истории": {
+      "main": [
+        [
+          {
+            "node": "Сохранить истории сообщений",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "сообщение: \"надо реплаем\"": {
+      "main": [
+        [
+          {
+            "node": "Получить текст сообщения для сохранения истории",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить истории сообщений": {
+      "main": [
+        []
+      ]
+    },
+    "Предупреждение об удалении": {
+      "main": [
+        [
+          {
+            "node": "Добавить время удаления сообщения (10 минут)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить время удаления сообщения (10 минут)": {
+      "main": [
+        [
+          {
+            "node": "Получить текст сообщения для сохранения истории",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить сообщение о загрузке": {
+      "main": [
+        [
+          {
+            "node": "Получить текст сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Вытаскиваем ID записей, которые надо обновить": {
+      "main": [
+        [
+          {
+            "node": "Пометка записей как удаленных",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получение записей на удаление": {
+      "main": [
+        [
+          {
+            "node": "Удаление сообщений",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Удаление сообщений": {
+      "main": [
+        [
+          {
+            "node": "Вытаскиваем ID записей, которые надо обновить",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Раз в 1 минуту": {
+      "main": [
+        [
+          {
+            "node": "Получение записей на удаление",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "S3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Отправка найденных фото",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Удалить упоминание": {
+      "main": [
+        [
+          {
+            "node": "Commands router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "сообщение: \"неизвестная команда\"": {
+      "main": [
+        [
+          {
+            "node": "Получить текст сообщения для сохранения истории",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Если упомянули бота": {
+      "main": [
+        [
+          {
+            "node": "Удалить упоминание",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получение данных сообщения": {
+      "main": [
+        [
+          {
+            "node": "Тип канала",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Тип канала": {
+      "main": [
+        [
+          {
+            "node": "Если упомянули бота",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Если упомянули бота",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Удалить упоминание",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Вытягивание случайной карты": {
+      "main": [
+        [
+          {
+            "node": "Проверка пустого описания",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверка пустого описания": {
+      "main": [
+        [
+          {
+            "node": "Генерация описания",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Определение описания карты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Обновление описания": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Генерация описания": {
+      "main": [
+        [
+          {
+            "node": "Обновление описания",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправка вытянутой карты": {
+      "main": [
+        [
+          {
+            "node": "Удалить сообщение о загрузке1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Запись какая карта была вытянута",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Получить текст сообщения для сохранения истории",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Определение названия карты": {
+      "main": [
+        [
+          {
+            "node": "Получить карты из БД",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Определение описания карты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Скачиваем изображение для отправки": {
+      "main": [
+        [
+          {
+            "node": "Отправка вытянутой карты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Определение описания карты": {
+      "main": [
+        [
+          {
+            "node": "Скачиваем изображение для отправки",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Запись какая карта была вытянута": {
+      "main": [
+        []
+      ]
+    },
+    "Сообщение загрузки": {
+      "main": [
+        [
+          {
+            "node": "Вытягивание случайной карты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Удалить сообщение о загрузке1": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Генерация описания",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cbec8b99-1c68-4360-9d53-941e82f70e80",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f9f7e05eb86c75cbdf881bf125fc2feffeaaa5f359b7827e1d445b57950f8eb4"
+  },
+  "id": "M713RB0IM6vL6m5c",
+  "tags": []
+}
