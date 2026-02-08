@@ -2,11 +2,9 @@ package app
 
 import (
 	"context"
-	"strings"
 
 	"neurofreyja/internal/features/draw_card"
 	"neurofreyja/internal/features/find_card_scan"
-	"neurofreyja/internal/shared/telegram"
 
 	"gopkg.in/telebot.v3"
 )
@@ -38,39 +36,17 @@ func (a *App) RegisterHandlers() {
 		Logger:    a.Logger,
 	}
 
-	route := func(c telebot.Context) error {
-		msg := c.Message()
-		if msg == nil {
-			return nil
+	a.Bot.Handle("/find_card_scan", func(c telebot.Context) error {
+		return findHandler.Handle(c)
+	})
+	a.Bot.Handle("/draw_card", func(c telebot.Context) error {
+		return drawHandler.Handle(c)
+	})
+	a.Bot.Handle(telebot.OnText, func(c telebot.Context) error {
+		_, err := a.Messenger.SendText(context.Background(), c.Chat(), "Такая команда мне неизвестна")
+		if err != nil && a.Logger != nil {
+			a.Logger.WithError(err).Warn("failed to send unknown command")
 		}
-
-		text := telegram.MessageText(msg)
-		if text == "" {
-			return nil
-		}
-
-		if telegram.IsGroupChat(msg) {
-			if !telegram.BotMentioned(text, a.Config.BotUsername) {
-				return nil
-			}
-		}
-		text = telegram.RemoveBotMention(text, a.Config.BotUsername)
-
-		text = strings.TrimSpace(text)
-		switch text {
-		case "/find_card_scan":
-			return findHandler.Handle(c)
-		case "/draw_card":
-			return drawHandler.Handle(c)
-		default:
-			_, err := a.Messenger.SendText(context.Background(), msg.Chat, "Такая команда мне неизвестна")
-			if err != nil && a.Logger != nil {
-				a.Logger.WithError(err).Warn("failed to send unknown command")
-			}
-			return nil
-		}
-	}
-
-	a.Bot.Handle(telebot.OnText, route)
-	a.Bot.Handle(telebot.OnPhoto, route)
+		return nil
+	})
 }
