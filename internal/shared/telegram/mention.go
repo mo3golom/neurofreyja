@@ -25,6 +25,6 @@ func RemoveBotMention(text, username string) string {
 }
 
 func mentionRegex(username string) *regexp.Regexp {
-	pattern := `(?i)(^|[^\w])@` + regexp.QuoteMeta(username) + `(\b|$)`
+	pattern := `(?i)(^|[^\w]|/\w+)@` + regexp.QuoteMeta(username) + `(\b|$)`
 	return regexp.MustCompile(pattern)
 }
