@@ -1,8 +1,6 @@
 package app
 
 import (
-	"context"
-
 	"neurofreyja/internal/features/draw_card"
 	"neurofreyja/internal/features/find_card_scan"
 
