@@ -42,11 +42,4 @@ func (a *App) RegisterHandlers() {
 	a.Bot.Handle("/draw_card", func(c telebot.Context) error {
 		return drawHandler.Handle(c)
 	})
-	a.Bot.Handle(telebot.OnText, func(c telebot.Context) error {
-		_, err := a.Messenger.SendText(context.Background(), c.Chat(), "Такая команда мне неизвестна")
-		if err != nil && a.Logger != nil {
-			a.Logger.WithError(err).Warn("failed to send unknown command")
-		}
-		return nil
-	})
 }
